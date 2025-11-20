@@ -4,7 +4,9 @@ from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from resume_parser import parse_resume
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='/')
+#app = Flask(__name__, static_folder='../frontend', static_url_path='/')
+
+app = Flask(__name__)
 
 S3_BUCKET = os.environ.get("RESUME_BUCKET_NAME")
 s3_client = boto3.client('s3')
@@ -30,10 +32,9 @@ def upload_resume():
     return jsonify({'status': 'success', 's3_key': s3_key})
 
 # Serve frontend
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
+##@app.route('/')
+##def index():
+##   return send_from_directory(app.static_folder, 'index.html')
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
+##if __name__ == '__main__':
+##    app.run(host='0.0.0.0', port=5000)
