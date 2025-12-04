@@ -19,7 +19,14 @@ form.addEventListener("submit", async (e) => {
         });
 
         const data = await res.json();
-        responseBox.textContent = JSON.stringify(data, null, 2);
+
+        // Show ONLY the parsed JSON
+        if (data.parsed_json) {
+            responseBox.textContent = JSON.stringify(data.parsed_json, null, 2);
+        } else {
+            responseBox.textContent = "Upload succeeded, but no JSON returned.";
+        }
+
     } catch (err) {
         responseBox.textContent = "Error: " + err.message;
     }
