@@ -1,15 +1,39 @@
 import os
+import json
+import uuid
 import boto3
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
+from botocore.exceptions import ClientError
 from werkzeug.utils import secure_filename
 from resume_parser import parse_resume
 
-#app = Flask(__name__, static_folder='../frontend', static_url_path='/')
-
 app = Flask(__name__)
 
-S3_BUCKET = os.environ.get("RESUME_BUCKET_NAME")
-s3_client = boto3.client('s3')
+S3_BUCKET = "resume-parser-bucket-example"
+
+def get_secret():
+    secret_name = "resume-app"
+    region_name = "us-east-2"
+
+    session = boto3.session.Session()
+    client = session.client("secretsmanager", region_name=region_name)
+
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret_string = get_secret_value_response["SecretString"]
+        return json.loads(secret_string)
+    except ClientError:
+        raise
+
+# Initialize S3 client with secrets
+secret = get_secret()
+
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=secret["aws_key_id"],
+    aws_secret_access_key=secret["aws_secret_access_key"],
+    region_name="us-east-2"
+)
 
 @app.route('/upload', methods=['POST'])
 def upload_resume():
@@ -24,17 +48,25 @@ def upload_resume():
     file_path = f"/tmp/{filename}"
     file.save(file_path)
 
+    # Parse resume
     parsed_data = parse_resume(file_path)
 
-    s3_key = f"resumes/{os.path.splitext(filename)[0]}.json"
-    s3_client.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=str(parsed_data))
+    # Generate a randomized filename
+    random_id = str(uuid.uuid4())
+    s3_key = f"resumes/{random_id}.json"
 
-    return jsonify({'status': 'success', 's3_key': s3_key})
+    try:
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=s3_key,
+            Body=json.dumps(parsed_data),
+            ContentType="application/json"
+        )
+    except ClientError as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Serve frontend
-##@app.route('/')
-##def index():
-##   return send_from_directory(app.static_folder, 'index.html')
-
-##if __name__ == '__main__':
-##    app.run(host='0.0.0.0', port=5000)
+    return jsonify({
+    'status': 'success',
+    's3_key': s3_key,
+    'parsed_json': parsed_data   # send the JSON back to the frontend
+})
