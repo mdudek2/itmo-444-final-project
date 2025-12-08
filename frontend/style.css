@@ -9,7 +9,7 @@ body {
     background: white;
     padding: 30px;
     border-radius: 10px;
-    max-width: 500px;
+    width: 40%;
     margin: auto;
     box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
 }
@@ -27,3 +27,41 @@ pre {
     overflow-y: auto;
 }
 
+.resume-label {
+    display: inline-block;
+    width: 150px;
+    text-align: right;
+    margin-right: 10px;
+}
+
+#resumeFile {
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        width: 90% !important;
+        max-width: 90% !important;
+    }
+
+    form {
+        text-align: center;
+    }
+
+    .resume-label {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    #resumeFile {
+        width: 100%;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
