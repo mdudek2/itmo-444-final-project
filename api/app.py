@@ -9,7 +9,7 @@ from resume_parser import parse_resume
 
 app = Flask(__name__)
 
-S3_BUCKET = "resume-parser-bucket-example"
+S3_BUCKET = "mdudek2-resume-bucket"
 
 def get_secret():
     secret_name = "resume-app"
