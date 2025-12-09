@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import boto3
+import threading
 from flask import Flask, request, jsonify
 from botocore.exceptions import ClientError
 from werkzeug.utils import secure_filename
@@ -35,8 +36,25 @@ s3_client = boto3.client(
     region_name="us-east-2"
 )
 
+# Helper function to delete file after a delay
+def delete_file_later(file_path, delay=300):
+   
+    # delete function
+    def delete():
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleted {file_path}")
+        except Exception as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    timer = threading.Timer(delay, delete)
+    timer.start()
+
+# upload route
 @app.route('/upload', methods=['POST'])
 def upload_resume():
+    
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'No file part'}), 400
 
@@ -47,6 +65,9 @@ def upload_resume():
     filename = secure_filename(file.filename)
     file_path = f"/tmp/{filename}"
     file.save(file_path)
+
+    # Schedule file deletion in 5 minutes
+    delete_file_later(file_path, delay=300)
 
     # Parse resume
     parsed_data = parse_resume(file_path)
@@ -62,11 +83,12 @@ def upload_resume():
             Body=json.dumps(parsed_data),
             ContentType="application/json"
         )
+   
     except ClientError as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
     return jsonify({
-    'status': 'success',
-    's3_key': s3_key,
-    'parsed_json': parsed_data   # send the JSON back to the frontend
-})
+        'status': 'success',
+        's3_key': s3_key,
+        'parsed_json': parsed_data  # send the JSON back to the frontend
+    })
